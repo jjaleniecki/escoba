@@ -1,0 +1,348 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap');
+
+:root {
+  --tapete:      #1a4a1e;
+  --tapete-dark: #0f2e12;
+  --gold:        #c9a84c;
+  --gold-light:  #f0d080;
+  --cream:       #f5eed8;
+  --text:        #f0e6c8;
+  --text-dim:    rgba(240,230,200,0.55);
+  --panel-bg:    rgba(8,20,10,0.82);
+  --border:      rgba(201,168,76,0.3);
+  --card-w:      88px;
+  --card-h:      138px;
+  --radius:      8px;
+}
+
+@media (min-width:1280px) { :root { --card-w:100px; --card-h:156px; } }
+
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+
+html, body {
+  height: 100%;
+  overflow: hidden; /* the app handles its own scroll internally */
+}
+
+body {
+  font-family: 'Crimson Pro', Georgia, serif;
+  background: var(--tapete-dark);
+  background-image:
+    radial-gradient(ellipse at 30% 20%, #1e5c24 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 80%, #163d1a 0%, transparent 55%),
+    repeating-linear-gradient(45deg,transparent,transparent 28px,rgba(255,255,255,.013) 28px,rgba(255,255,255,.013) 29px);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── MODAL NOMBRES ─────────────────────────────── */
+#modal-nombres {
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.85);
+  display:flex; align-items:center; justify-content:center;
+  z-index:2000; backdrop-filter:blur(4px);
+}
+.nombres-caja {
+  background:linear-gradient(160deg,#1a3d1e,#0e2212);
+  border:1px solid var(--gold); border-radius:16px;
+  padding:48px 56px; text-align:center;
+  box-shadow:0 0 60px rgba(201,168,76,.15),0 24px 60px rgba(0,0,0,.6);
+  max-width:420px; width:90%;
+}
+.nombres-caja h2 { font-family:'Cinzel',serif; font-size:1.6rem; color:var(--gold); letter-spacing:.12em; margin-bottom:8px; }
+.nombres-caja p  { color:var(--text-dim); font-size:1rem; margin-bottom:32px; }
+.campo-nombre {
+  width:100%; background:rgba(255,255,255,.06);
+  border:1px solid var(--border); border-radius:8px;
+  color:var(--cream); font-family:'Crimson Pro',serif; font-size:1.15rem;
+  padding:10px 14px; margin-bottom:14px; outline:none;
+  transition:border-color .2s;
+}
+.campo-nombre:focus { border-color:var(--gold); }
+.campo-nombre::placeholder { color:var(--text-dim); }
+.btn-iniciar {
+  margin-top:10px; width:100%;
+  background:linear-gradient(135deg,var(--gold),#a07830);
+  color:#1a1000; font-family:'Cinzel',serif; font-size:1rem;
+  letter-spacing:.1em; border:none; border-radius:8px;
+  padding:13px; cursor:pointer; transition:opacity .2s,transform .1s;
+}
+.btn-iniciar:hover { opacity:.88; transform:translateY(-1px); }
+.btn-iniciar:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+.botones-inicio { display:flex; gap:10px; margin-top:10px; }
+.botones-inicio .btn-iniciar { margin-top:0; }
+.btn-ia {
+  background:linear-gradient(135deg,#2a5a3a,#1a3a28);
+  color:var(--gold-light);
+  border:1px solid rgba(100,200,120,.3);
+}
+
+/* ── APP LAYOUT ────────────────────────────────── */
+#app { display:none; flex-direction:column; height:100vh; }
+#app.visible { display:flex; }
+
+/* Top bar — NO points here */
+.top-bar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:8px 24px; border-bottom:1px solid var(--border);
+  background:rgba(0,0,0,.35); flex-shrink:0;
+}
+.top-bar h1 { font-family:'Cinzel',serif; font-size:1.2rem; color:var(--gold); letter-spacing:.15em; font-weight:900; }
+.turno-tag {
+  font-family:'Cinzel',serif; font-size:.75rem; letter-spacing:.1em;
+  color:var(--gold); background:rgba(201,168,76,.12);
+  border:1px solid rgba(201,168,76,.3); border-radius:20px; padding:4px 16px;
+}
+
+/* ── MAIN CONTENT ─────────────────────────────── */
+.contenido { display:flex; flex:1; min-height:0; overflow:hidden; }
+
+/* ── ZONA JUEGO 70% ────────────────────────────── */
+.zona-juego {
+  flex:0 0 70%;
+  display:flex; flex-direction:column;
+  padding:12px 24px 12px 20px;
+  gap:10px;
+  min-height:0; overflow:hidden;
+}
+
+/* Rival area — fixed small height */
+.rival-wrap { flex-shrink:0; }
+.zona-label {
+  font-family:'Cinzel',serif; font-size:.65rem; letter-spacing:.2em;
+  color:var(--text-dim); text-align:center; margin-bottom:4px;
+}
+.zona-rival { display:flex; justify-content:center; align-items:flex-end; gap:8px; min-height:80px; }
+.carta-rival {
+  width:calc(var(--card-w)*0.85); height:calc(var(--card-h)*0.85);
+  border-radius:var(--radius); flex-shrink:0;
+  background:linear-gradient(135deg,#1a3060,#0c1a40);
+  border:1px solid rgba(120,140,200,.3);
+  background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0,rgba(255,255,255,.04) 2px,transparent 2px,transparent 10px);
+  box-shadow:0 4px 12px rgba(0,0,0,.5);
+}
+
+/* Mesa + deck — grows to fill space, scrollable if many cards */
+.zona-mesa-wrap {
+  flex:1; min-height:0;
+  display:flex; gap:12px; align-items:stretch;
+}
+.deck-widget {
+  flex:0 0 80px; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:8px;
+  transition:opacity .4s;
+}
+.deck-stack { position:relative; width:66px; height:96px; }
+.deck-card { position:absolute; width:60px; height:90px; border-radius:6px;
+  background:linear-gradient(135deg,#1a3060,#0c1a40);
+  border:1px solid rgba(120,140,220,.35);
+  background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0,rgba(255,255,255,.04) 2px,transparent 2px,transparent 10px);
+  box-shadow:0 4px 12px rgba(0,0,0,.5); }
+.deck-card.d1 { left:0;   top:8px; }
+.deck-card.d2 { left:2px; top:4px; }
+.deck-card.d3 { left:4px; top:0; }
+.deck-count { font-family:'Cinzel',serif; font-size:1.5rem; color:var(--gold); font-weight:900; line-height:1; }
+.deck-label { font-size:.6rem; letter-spacing:.15em; color:var(--text-dim); }
+
+.zona-mesa {
+  flex:1; min-height:0;
+  display:flex; flex-direction:column;
+  background:rgba(0,0,0,.15);
+  border:1px dashed rgba(255,255,255,.08); border-radius:14px;
+  padding:10px;
+}
+/* Mesa cards area is scrollable when many cards pile up */
+.mesa-cartas {
+  flex:1; overflow-y:auto;
+  display:flex; flex-wrap:wrap;
+  gap:10px; justify-content:center; align-content:flex-start;
+  padding:4px;
+  scrollbar-width:thin; scrollbar-color:rgba(201,168,76,.25) transparent;
+}
+.placeholder-txt { color:var(--text-dim); font-size:.85rem; opacity:.5; align-self:center; }
+
+/* ── PLAYER HAND — fixed at bottom, never pushed off ─── */
+.zona-mano {
+  flex-shrink:0;
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  padding-top:4px;
+}
+.mano-cartas {
+  display:flex; flex-wrap:wrap; gap:10px;
+  justify-content:center; align-items:flex-end;
+}
+
+/* ── FILA QUE JUNTA LA MANO (propia o rival) CON SU POZO ── */
+.fila-mano-y-pozo {
+  display:flex; align-items:flex-end; justify-content:center;
+  gap:18px; width:100%;
+}
+
+/* ── POZO (cartas levantadas, boca abajo, con contador) ─── */
+.pozo-widget {
+  flex-shrink:0;
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  transition:filter .3s ease;
+}
+.pozo-carta {
+  width:calc(var(--card-w)*0.72); height:calc(var(--card-h)*0.72);
+  border-radius:var(--radius);
+  background:linear-gradient(135deg,#3a1010,#1a0606);
+  border:1px solid rgba(220,140,120,.3);
+  background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.04) 0,rgba(255,255,255,.04) 2px,transparent 2px,transparent 10px);
+  box-shadow:0 4px 12px rgba(0,0,0,.5);
+  transition:transform .25s ease, box-shadow .25s ease;
+}
+.pozo-count {
+  font-family:'Cinzel',serif; font-size:.95rem; color:var(--gold-light);
+  font-weight:900; line-height:1;
+}
+/* ── CARDS ─────────────────────────────────────── */
+.carta-img {
+  width:var(--card-w); height:var(--card-h);
+  border-radius:var(--radius);
+  box-shadow:0 6px 18px rgba(0,0,0,.55);
+  object-fit:cover; display:block;
+  border:2px solid transparent;
+  transition:transform .22s cubic-bezier(.34,1.56,.64,1),box-shadow .22s,border-color .22s;
+  will-change:transform;
+}
+@keyframes cartaEntrar {
+  from { opacity:0; transform:translateY(36px) scale(.88); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
+}
+.carta-img { animation:cartaEntrar .32s cubic-bezier(.34,1.56,.64,1) both; }
+
+.carta-mano { cursor:pointer; }
+.carta-mano:hover {
+  transform:translateY(-16px) scale(1.06);
+  box-shadow:0 14px 30px rgba(0,0,0,.65);
+  border-color:rgba(201,168,76,.4);
+  z-index:10;
+}
+.carta-mano.seleccionada {
+  transform:translateY(-24px) scale(1.1) rotate(-1.5deg);
+  box-shadow:0 0 0 3px var(--gold),0 18px 38px rgba(0,0,0,.7);
+  border-color:var(--gold);
+  z-index:20;
+}
+
+/* ── BOTÓN JUGAR ───────────────────────────────── */
+.btn-jugar {
+  font-family:'Cinzel',serif; font-size:.88rem; letter-spacing:.12em;
+  background:linear-gradient(135deg,var(--gold) 0%,#8a6020 100%);
+  color:#1a1000; border:none; border-radius:30px;
+  padding:10px 34px; cursor:pointer;
+  box-shadow:0 4px 16px rgba(201,168,76,.25);
+  transition:opacity .2s,transform .15s,box-shadow .2s;
+  flex-shrink:0;
+}
+.btn-jugar:hover:not(:disabled) { opacity:.88; transform:translateY(-2px); box-shadow:0 8px 22px rgba(201,168,76,.35); }
+.btn-jugar:disabled { opacity:.3; cursor:not-allowed; filter:saturate(.3); }
+
+/* ── PANEL ESTADO 30% ──────────────────────────── */
+.zona-estado {
+  flex:0 0 30%; border-left:1px solid var(--border);
+  background:var(--panel-bg);
+  display:flex; flex-direction:column; min-height:0; overflow:hidden;
+}
+.estado-header {
+  padding:14px 20px; border-bottom:1px solid var(--border);
+  font-family:'Cinzel',serif; font-size:.78rem; letter-spacing:.18em; color:var(--gold);
+  flex-shrink:0;
+}
+/* KEY FIX: log area scrolls, panel doesn't overflow */
+.estado-log {
+  flex:1; overflow-y:auto; min-height:0;
+  padding:10px 14px;
+  display:flex; flex-direction:column; gap:7px;
+  scrollbar-width:thin; scrollbar-color:rgba(201,168,76,.3) transparent;
+}
+.log-entry {
+  padding:8px 11px; border-radius:7px; font-size:.88rem; line-height:1.45;
+  border-left:3px solid transparent;
+  animation:fadeSlide .28s ease both; flex-shrink:0;
+}
+@keyframes fadeSlide { from{opacity:0;transform:translateX(10px)} to{opacity:1;transform:none} }
+.log-info    { background:rgba(255,255,255,.04);  border-color:rgba(255,255,255,.15); color:var(--text-dim); }
+.log-turno   { background:rgba(201,168,76,.08);   border-color:var(--gold);          color:var(--gold-light); }
+.log-levanta { background:rgba(60,180,80,.1);     border-color:#4caf50;              color:#a5d6a7; }
+.log-escoba  { background:rgba(255,200,0,.12);    border-color:#ffd700;              color:#ffe57f;
+               box-shadow:0 0 10px rgba(255,215,0,.18); font-weight:bold; }
+.log-descarte{ background:rgba(200,80,80,.08);    border-color:#e57373;              color:#ffb3b3; }
+.log-time    { font-size:.7rem; color:var(--text-dim); opacity:.55; display:block; margin-bottom:1px; }
+
+/* Scoreboard pinned at bottom of panel */
+.estado-scores {
+  flex-shrink:0; border-top:1px solid var(--border);
+  padding:12px 16px; display:flex; gap:12px;
+}
+.score-jugador { flex:1; background:rgba(255,255,255,.04); border-radius:9px; padding:9px 12px; text-align:center; }
+.score-nombre  { font-family:'Cinzel',serif; font-size:.72rem; color:var(--gold); letter-spacing:.1em; margin-bottom:3px; }
+.score-pts     { font-size:1.5rem; font-weight:300; color:var(--cream); }
+.score-escobas { font-size:.72rem; color:var(--text-dim); margin-top:2px; }
+
+/* ── TOP BAR RIGHT SIDE (badge + turn tag) ─────── */
+.top-bar-right { display:flex; align-items:center; gap:10px; }
+
+/* ── ESCOBA BADGE (chica, junto al turno) ──────── */
+.escoba-badge {
+  font-family:'Cinzel',serif; font-size:.72rem; letter-spacing:.08em;
+  color:#ffe57f; background:rgba(255,215,0,.1);
+  border:1px solid rgba(255,215,0,.35); border-radius:20px;
+  padding:4px 12px;
+  opacity:0; transform:translateY(-3px);
+  transition:opacity .25s ease, transform .25s ease;
+  pointer-events:none;
+}
+.escoba-badge.visible { opacity:1; transform:translateY(0); }
+
+/* ── FIN DE PARTIDA ────────────────────────────── */
+#modal-fin {
+  position:fixed; inset:0; background:rgba(0,0,0,.87);
+  display:none; align-items:center; justify-content:center;
+  z-index:3000; backdrop-filter:blur(5px);
+}
+
+/* ── SELECTOR JUGADOR 1 / 2 (modal inicial) ───── */
+.selector-jugador {
+  display:flex; gap:10px; margin-bottom:18px;
+}
+.btn-jugador-num {
+  flex:1; background:rgba(255,255,255,.05);
+  border:1px solid var(--border); border-radius:8px;
+  color:var(--text-dim); font-family:'Cinzel',serif; font-size:.82rem;
+  letter-spacing:.06em; padding:11px 8px; cursor:pointer;
+  transition:background .2s,border-color .2s,color .2s;
+}
+.btn-jugador-num:hover { border-color:var(--gold); color:var(--cream); }
+.btn-jugador-num.seleccionado {
+  background:linear-gradient(135deg,rgba(201,168,76,.25),rgba(201,168,76,.08));
+  border-color:var(--gold); color:var(--gold-light);
+}
+.btn-jugador-num:disabled { cursor:not-allowed; opacity:.6; }
+
+.nota-espera {
+  margin-top:16px; font-size:.85rem; color:var(--gold-light);
+  min-height:1.2em; letter-spacing:.02em;
+}
+
+/* ── DESGLOSE DE FIN DE PARTIDA ────────────────── */
+.fin-detalle { margin-bottom:28px; text-align:left; }
+.fin-jugador-bloque {
+  background:rgba(255,255,255,.04); border:1px solid var(--border);
+  border-radius:10px; padding:14px 16px; margin-bottom:12px;
+}
+.fin-jugador-nombre {
+  font-family:'Cinzel',serif; font-size:.95rem; color:var(--gold);
+  letter-spacing:.05em; margin-bottom:8px;
+}
+.fin-linea {
+  font-size:.85rem; color:var(--text-dim); line-height:1.6;
+  padding-left:4px;
+}
+.fin-linea-stats {
+  margin-top:6px; padding-top:6px; border-top:1px solid var(--border);
+  color:var(--text);
+}

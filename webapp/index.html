@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Escoba Española</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- MODAL SELECCION DE JUGADOR -->
+    <div id="modal-nombres">
+        <div class="nombres-caja">
+            <h2>LA ESCOBA</h2>
+            <p>Escribi tu nombre para entrar a la partida</p>
+
+            <input id="input-nombre" class="campo-nombre" type="text" placeholder="Tu nombre" maxlength="20">
+            <div class="botones-inicio">
+                <button class="btn-iniciar" id="btn-iniciar">Jugar con otro</button>
+                <button class="btn-iniciar btn-ia" id="btn-iniciar-ia">Jugar contra IA</button>
+            </div>
+            <p class="nota-espera" id="nota-espera"></p>
+        </div>
+    </div>
+
+    <!-- APP -->
+    <div id="app">
+
+        <!-- Top bar — title + turn only, NO per-player points -->
+        <div class="top-bar">
+            <h1>⚜ LA ESCOBA ⚜</h1>
+            <div class="top-bar-right">
+                <div id="escoba-badge" class="escoba-badge">🧹 Escoba</div>
+                <div id="turno-tag" class="turno-tag">Cargando…</div>
+            </div>
+        </div>
+
+        <div class="contenido">
+
+            <!-- ZONA JUEGO 70% -->
+            <div class="zona-juego">
+
+                <!-- Rival hand top -->
+                <div class="rival-wrap">
+                    <div class="zona-label" id="label-rival">RIVAL</div>
+                    <div class="fila-mano-y-pozo">
+                        <div class="zona-rival" id="contenedor-rival"></div>
+                        <div class="pozo-widget" id="pozo-rival">
+                            <div class="pozo-carta"></div>
+                            <div class="pozo-count" id="pozo-count-rival">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mesa + deck -->
+                <div class="zona-mesa-wrap">
+                    <div class="deck-widget" id="deck-widget">
+                        <div class="deck-stack">
+                            <div class="deck-card d3"></div>
+                            <div class="deck-card d2"></div>
+                            <div class="deck-card d1"></div>
+                        </div>
+                        <div class="deck-count" id="deck-count">30</div>
+                        <div class="deck-label">EN MAZO</div>
+                    </div>
+                    <div class="zona-mesa">
+                        <div class="zona-label">MESA</div>
+                        <div class="mesa-cartas" id="contenedor-mesa">
+                            <span class="placeholder-txt">Iniciando…</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Player hand + button — pinned at bottom -->
+                <div class="zona-mano">
+                    <div class="zona-label" id="label-jugador">TU MANO</div>
+                    <div class="fila-mano-y-pozo">
+                        <div class="mano-cartas" id="contenedor-mano"></div>
+                        <div class="pozo-widget" id="pozo-mio">
+                            <div class="pozo-carta"></div>
+                            <div class="pozo-count" id="pozo-count-mio">0</div>
+                        </div>
+                    </div>
+                    <button class="btn-jugar" id="btn-jugar" disabled>Jugar Carta Seleccionada</button>
+                </div>
+
+            </div>
+
+            <!-- PANEL ESTADO 30% -->
+            <div class="zona-estado">
+                <div class="estado-header">📋 REGISTRO DE PARTIDA</div>
+                <div class="estado-log" id="estado-log">
+                    <div class="log-entry log-info"><span class="log-time">--:--</span>Conectando con el servidor…</div>
+                </div>
+                <!-- Scoreboard pinned at bottom of panel -->
+                <div class="estado-scores">
+                    <div class="score-jugador">
+                        <div class="score-nombre" id="score-nombre-j1">J1</div>
+                        <div class="score-pts" id="score-pts-j1">0</div>
+                        <div class="score-escobas" id="score-esc-j1">0 escobas</div>
+                    </div>
+                    <div class="score-jugador">
+                        <div class="score-nombre" id="score-nombre-j2">J2</div>
+                        <div class="score-pts" id="score-pts-j2">0</div>
+                        <div class="score-escobas" id="score-esc-j2">0 escobas</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- FIN DE PARTIDA -->
+    <div id="modal-fin">
+        <div class="nombres-caja" style="max-width:520px">
+            <h2 id="fin-titulo">FIN DE PARTIDA</h2>
+            <p id="fin-subtitulo" style="font-size:1.15rem;color:var(--cream);margin-bottom:16px"></p>
+            <div id="fin-detalle" class="fin-detalle"></div>
+            <button class="btn-iniciar" onclick="location.reload()">Jugar de Nuevo</button>
+        </div>
+    </div>
+
+    <script src="bridge_ws.js"></script>
+    <script>
+        // ═══ ESTADO GLOBAL ════════════════════════════════════════════
+        // A diferencia de la version anterior (que simulaba ambas manos
+        // localmente con un motor Prolog en el navegador), ahora el
+        // servidor es la unica fuente de verdad: esta pagina solo
+        // muestra la mano y el puntaje DE ESTE jugador, mas la mesa y
+        // el mazo, que son compartidos. La mano del rival nunca se ve,
+        // solo se muestra boca abajo con la cantidad de cartas que tiene.
+        window.estadoJuego = {
+            miNumero: null,        // 1 o 2
+            miNombre: '', rivalNombre: 'Rival',
+            mano: [], mesa: [], mazoRestante: 0,
+            esMiTurno: false,
+            puntos1: 0, puntos2: 0,
+            pozoMio: 0, pozoRival: 0,
+            cartasRival: 3,
+            mesaAnterior: [],
+        };
+        let cartaSeleccionada = null;
+        let juegoTerminado = false;
+
+        // ═══ LOG ══════════════════════════════════════════════════════
+        window.log = function (msg, tipo = 'info') {
+            const panel = document.getElementById('estado-log');
+            const div = document.createElement('div');
+            div.className = `log-entry log-${tipo}`;
+            const now = new Date();
+            const t = [now.getHours(), now.getMinutes(), now.getSeconds()]
+                .map(x => String(x).padStart(2, '0')).join(':');
+            div.innerHTML = `<span class="log-time">${t}</span>${msg}`;
+            panel.appendChild(div);
+            panel.scrollTop = panel.scrollHeight;
+        };
+
+        // ═══ MARCADORES ══════════════════════════════════════════════
+        function actualizarMarcadores() {
+            const s = window.estadoJuego;
+            document.getElementById('turno-tag').textContent =
+                s.esMiTurno ? 'ES TU TURNO' : `Turno de ${s.rivalNombre}`;
+
+            const nombreJ1 = s.miNumero === 1 ? s.miNombre : s.rivalNombre;
+            const nombreJ2 = s.miNumero === 1 ? s.rivalNombre : s.miNombre;
+            document.getElementById('score-nombre-j1').textContent = nombreJ1 || 'J1';
+            document.getElementById('score-nombre-j2').textContent = nombreJ2 || 'J2';
+            document.getElementById('score-pts-j1').textContent = s.puntos1;
+            document.getElementById('score-pts-j2').textContent = s.puntos2;
+
+            document.getElementById('pozo-count-mio').textContent = s.pozoMio;
+            document.getElementById('pozo-count-rival').textContent = s.pozoRival;
+
+            document.getElementById('deck-count').textContent = s.mazoRestante;
+            document.getElementById('deck-widget').style.opacity = s.mazoRestante === 0 ? '0.3' : '1';
+            document.getElementById('label-rival').textContent = `RIVAL: ${(s.rivalNombre || 'RIVAL').toUpperCase()}`;
+            document.getElementById('label-jugador').textContent = `TU MANO (${(s.miNombre || '').toUpperCase()})`;
+        }
+
+        // ═══ RENDER ══════════════════════════════════════════════════
+        // Recibe los datos ya parseados del mensaje "--- Estado del juego ---"
+        // que manda server.pl, y los mezcla con el estado actual.
+        window.renderizarTablero = function (datosServidor) {
+            const s = window.estadoJuego;
+
+            s.mano = datosServidor.mano;
+            s.mesa = datosServidor.mesa;
+            s.mazoRestante = datosServidor.mazoRestante;
+            s.esMiTurno = datosServidor.esMiTurno;
+            if (datosServidor.nombre) s.miNombre = datosServidor.nombre;
+            if (datosServidor.nombreRival) s.rivalNombre = datosServidor.nombreRival;
+
+            if (s.miNumero === 1) { s.puntos1 = datosServidor.puntos; s.puntos2 = datosServidor.puntosRival; }
+            else { s.puntos2 = datosServidor.puntos; s.puntos1 = datosServidor.puntosRival; }
+            s.pozoMio = datosServidor.pozoMio;
+            s.pozoRival = datosServidor.pozoRival;
+
+            cartaSeleccionada = null;
+            document.getElementById('btn-jugar').disabled = true;
+
+            renderizarMesaYManos(s);
+        };
+
+        // Dibuja la mesa, la mano propia y la mano del rival con el
+        // estado actual (sin animacion). Separado de renderizarTablero
+        // para poder reusarlo despues de que termine la animacion de
+        // captura.
+        function renderizarMesaYManos(s) {
+            const mesaEl = document.getElementById('contenedor-mesa');
+            mesaEl.innerHTML = '';
+            if (!s.mesa.length) {
+                mesaEl.innerHTML = '<span class="placeholder-txt">Mesa vacía</span>';
+            } else {
+                s.mesa.forEach(c => mesaEl.appendChild(mkImg(c, 'carta-img carta-mesa')));
+            }
+
+            // Rival boca abajo: no sabemos sus cartas exactas, asi que
+            // mantenemos la cantidad anterior salvo que detectemos un cambio
+            // de ronda (mano propia recien repartida con 3 cartas y mesa de 4)
+            const rivalEl = document.getElementById('contenedor-rival');
+            rivalEl.innerHTML = '';
+            for (let i = 0; i < s.cartasRival; i++) {
+                const d = document.createElement('div');
+                d.className = 'carta-rival';
+                rivalEl.appendChild(d);
+            }
+
+            // Mi mano
+            const manoEl = document.getElementById('contenedor-mano');
+            manoEl.innerHTML = '';
+            s.mano.forEach((c, i) => {
+                const img = mkImg(c, 'carta-img carta-mano');
+                img.style.animationDelay = `${i * 0.07}s`;
+                img.addEventListener('click', () => {
+                    if (juegoTerminado || !s.esMiTurno) return;
+                    manoEl.querySelectorAll('.seleccionada').forEach(el => el.classList.remove('seleccionada'));
+                    img.classList.add('seleccionada');
+                    cartaSeleccionada = c;
+                    document.getElementById('btn-jugar').disabled = false;
+                });
+                manoEl.appendChild(img);
+            });
+
+            actualizarMarcadores();
+        }
+
+        function mkImg(carta, cls) {
+            const img = document.createElement('img');
+            img.src = `cartas/${carta}.png`;
+            img.alt = carta; img.className = cls;
+            return img;
+        }
+
+        // ═══ JUGAR CARTA ═════════════════════════════════════════════
+        // No calculamos nada en el cliente: solo le avisamos al servidor
+        // que carta jugamos. server.pl procesa la jugada y nos manda de
+        // vuelta el nuevo estado, que dispara renderizarTablero otra vez.
+        function ejecutarJugada() {
+            if (!cartaSeleccionada || juegoTerminado || !window.estadoJuego.esMiTurno) return;
+            window.enviarCartaAlServidor(cartaSeleccionada);
+            // Deshabilitamos el boton hasta que llegue la confirmacion del
+            // servidor, para evitar dobles envios mientras se espera respuesta
+            document.getElementById('btn-jugar').disabled = true;
+        }
+        document.getElementById('btn-jugar').addEventListener('click', ejecutarJugada);
+
+        // ═══ FIN DE PARTIDA ══════════════════════════════════════════
+        // mensajeFinal: el texto de felicitaciones/empate
+        // desglose: arreglo [{nombre, total, detalles:[...], cartas, oros, sietes}, ...]
+        window.onFinDePartida = function (mensajeFinal, desglose) {
+            juegoTerminado = true;
+            const s = window.estadoJuego;
+
+            let titulo;
+            if (mensajeFinal.includes('Empate')) {
+                titulo = '¡EMPATE!';
+            } else if (mensajeFinal.includes('Felicitaciones')) {
+                titulo = '¡GANASTE!';
+            } else {
+                titulo = 'PERDISTE';
+            }
+
+            document.getElementById('fin-titulo').textContent = titulo;
+            document.getElementById('fin-subtitulo').textContent = mensajeFinal.trim();
+
+            const detalleEl = document.getElementById('fin-detalle');
+            detalleEl.innerHTML = '';
+            if (desglose && desglose.length) {
+                desglose.forEach(j => {
+                    const bloque = document.createElement('div');
+                    bloque.className = 'fin-jugador-bloque';
+                    const lineasDetalle = j.detalles.map(d => `<div class="fin-linea">+ ${d}</div>`).join('');
+                    bloque.innerHTML = `
+                        <div class="fin-jugador-nombre">${j.nombre} — ${j.total} puntos</div>
+                        ${lineasDetalle}
+                        <div class="fin-linea fin-linea-stats">Cartas: ${j.cartas} · Oros: ${j.oros} · Sietes: ${j.sietes}</div>
+                    `;
+                    detalleEl.appendChild(bloque);
+                });
+            }
+
+            document.getElementById('modal-fin').style.display = 'flex';
+            window.log(`🏆 ${titulo} — ${mensajeFinal.trim()}`, 'escoba');
+        };
+
+        // ═══ ESCOBA BADGE ════════════════════════════════════════════
+        // Insignia chica y breve junto al indicador de turno, en vez
+        // de un aviso a pantalla completa.
+        window.mostrarEscobaFlash = function () {
+            const el = document.getElementById('escoba-badge');
+            el.classList.add('visible');
+            setTimeout(() => { el.classList.remove('visible'); }, 1800);
+        };
+
+        // ═══ DESCONEXION DEL RIVAL ═══════════════════════════════════
+        function detenerPartida(mensaje) {
+            juegoTerminado = true;
+            document.getElementById('turno-tag').textContent = mensaje;
+            document.getElementById('btn-jugar').disabled = true;
+            window.log(`⚠️ ${mensaje} Recarga la pagina para jugar de nuevo.`, 'descarte');
+        }
+        window.onRivalDesconectado = function () {
+            detenerPartida('Partida interrumpida: el rival se desconecto.');
+        };
+        window.onConexionPerdida = function () {
+            if (!juegoTerminado) {
+                detenerPartida('Se perdio la conexion con el servidor.');
+            }
+        };
+
+        // ═══ FLUJO DE CONEXION Y NOMBRE ══════════════════════════════
+
+        window.onRolAsignado = function (num) {
+            window.estadoJuego.miNumero = num;
+        };
+
+        window.onPedirNombre = function () {
+            const nombre = document.getElementById('input-nombre').value.trim() || 'Jugador';
+            window.estadoJuego.miNombre = nombre;
+            window.enviarNombreAlServidor(nombre);
+            document.getElementById('nota-espera').textContent =
+                window._modoIA
+                    ? 'Conectando con la IA...'
+                    : 'Esperando a que el otro jugador se conecte...';
+        };
+
+        window.onJuegoListo = function () {
+            document.getElementById('modal-nombres').style.display = 'none';
+            document.getElementById('app').classList.add('visible');
+        };
+
+        function iniciarConexion(modoIA) {
+            const nombre = document.getElementById('input-nombre').value.trim();
+            if (!nombre) { document.getElementById('input-nombre').focus(); return; }
+            window._modoIA = modoIA;
+            document.getElementById('btn-iniciar').disabled = true;
+            document.getElementById('btn-iniciar-ia').disabled = true;
+            document.getElementById('input-nombre').disabled = true;
+            document.getElementById('nota-espera').textContent = 'Conectando...';
+            window.conectarAlServidor(modoIA);
+        }
+
+        document.getElementById('btn-iniciar').addEventListener('click', () => iniciarConexion(false));
+        document.getElementById('btn-iniciar-ia').addEventListener('click', () => iniciarConexion(true));
+        document.getElementById('input-nombre').addEventListener('keydown', e => {
+            if (e.key === 'Enter') iniciarConexion(false);
+        });
+    </script>
+</body>
+
+</html>
