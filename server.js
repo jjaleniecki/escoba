@@ -12,7 +12,7 @@ const WEBAPP_DIR     = path.join(__dirname, "webapp");
 const LOGICA_PL_PATH = path.join(__dirname, "logica.pl");
 const CODIGO_PL      = fs.readFileSync(LOGICA_PL_PATH, "utf8");
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "";
-const GEMINI_URL     = "https://generativelanguage.googleapis.com/v1beta/chat/completions";
+const GEMINI_URL     = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 const GEMINI_MODEL   = "gemini-2.0-flash";
 
 // ───────────────────────────────────────────────────────────────
@@ -175,7 +175,7 @@ async function pedirCartaAGemini(mano, mesa, nombreHumano) {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "x-goog-api-key": GEMINI_API_KEY,
+                "Authorization": `Bearer ${GEMINI_API_KEY}`,
             },
             body: JSON.stringify({
                 model: GEMINI_MODEL,
