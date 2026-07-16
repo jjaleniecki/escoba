@@ -375,19 +375,30 @@ body {
   #drawer-registro.abierto { display:flex; flex-direction:column; }
 
   /* La zona de juego ocupa todo el ancho, sin gap innecesario */
-  .zona-juego { flex:1; padding:6px 10px; gap:6px; }
+  .zona-juego {
+    flex:1; padding:6px 10px; gap:6px;
+    overflow:hidden; /* nunca crecer más que la pantalla */
+  }
+
+  /* Rival wrap sin altura mínima fija */
+  .rival-wrap { flex-shrink:0; }
+
+  /* Mesa + deck: altura limitada para no empujar la mano */
+  .zona-mesa-wrap {
+    gap:8px;
+    flex:1;
+    min-height:0;
+    max-height:45vh; /* nunca más de la mitad de la pantalla */
+  }
 
   /* Rival: cartas en fila horizontal */
-  .zona-rival { gap:6px; min-height:0; }
+  .zona-rival { gap:6px; min-height:0; flex-shrink:0; }
   .carta-rival {
     width:calc(var(--card-w)*0.78);
     height:calc(var(--card-h)*0.78);
   }
 
-  /* Mesa + deck */
-  .zona-mesa-wrap { gap:8px; flex:1; min-height:0; }
-
-  /* Mesa con scroll horizontal Y vertical */
+  /* Mesa con scroll cuando hay muchas cartas */
   .mesa-cartas {
     overflow-x:auto;
     overflow-y:auto;
@@ -403,7 +414,10 @@ body {
   .deck-count  { font-size:1rem; }
   .deck-label  { font-size:.5rem; }
 
-  /* Las cartas de la mano van en fila con scroll horizontal */
+  /* Mano nunca se corta */
+  .zona-mano { flex-shrink:0; }
+
+
   .mano-cartas {
     flex-wrap:nowrap;
     overflow-x:auto;
