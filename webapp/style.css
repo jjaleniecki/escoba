@@ -357,7 +357,7 @@ body {
 @media (max-width: 640px) {
 
   /* Cartas más chicas */
-  :root { --card-w:60px; --card-h:94px; }
+  :root { --card-w:68px; --card-h:107px; }
 
   /* Top bar compacta */
   .top-bar { padding:5px 10px; }
@@ -399,17 +399,17 @@ body {
   /* ── MANO (tamaño fijo, no se achica) ── */
   .zona-mano {
     flex-shrink:0;
-    padding:4px 0 54px 0; /* 54px = espacio para el botón fijo */
+    padding:4px 0 56px 0; /* 56px = altura del botón fijo */
     gap:6px;
   }
-  .fila-mano-y-pozo { gap:8px; }
   .mano-cartas {
     flex-wrap:nowrap; overflow-x:auto;
     justify-content:flex-start;
-    gap:6px; padding-bottom:2px;
+    gap:6px;
     scrollbar-width:none;
   }
   .mano-cartas::-webkit-scrollbar { display:none; }
+  .fila-mano-y-pozo { gap:8px; }
 
   /* Pozo */
   .pozo-carta { width:calc(var(--card-w)*.6); height:calc(var(--card-h)*.6); }
