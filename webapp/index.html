@@ -112,6 +112,36 @@
         </div>
     </div>
 
+    <!-- BOTÓN FLOTANTE REGISTRO (solo móvil) -->
+    <button id="btn-registro" aria-label="Ver registro">📋</button>
+
+    <!-- DRAWER REGISTRO (solo móvil) -->
+    <div id="drawer-registro">
+        <div class="drawer-overlay" id="drawer-overlay"></div>
+        <div class="drawer-panel">
+            <div class="drawer-handle"></div>
+            <div class="drawer-header">
+                <span>■ REGISTRO DE PARTIDA</span>
+                <span id="drawer-close" style="cursor:pointer;color:var(--text-dim);font-size:1.1rem">✕</span>
+            </div>
+            <!-- Scoreboard duplicado para el drawer -->
+            <div class="drawer-scores">
+                <div class="score-jugador">
+                    <div class="score-nombre" id="drawer-nombre-j1">J1</div>
+                    <div class="score-pts"    id="drawer-pts-j1">0</div>
+                    <div class="score-escobas" id="drawer-esc-j1">0 escobas</div>
+                </div>
+                <div class="score-jugador">
+                    <div class="score-nombre" id="drawer-nombre-j2">J2</div>
+                    <div class="score-pts"    id="drawer-pts-j2">0</div>
+                    <div class="score-escobas" id="drawer-esc-j2">0 escobas</div>
+                </div>
+            </div>
+            <!-- Log duplicado (se llena con los mismos mensajes) -->
+            <div class="drawer-log" id="drawer-log"></div>
+        </div>
+    </div>
+
     <!-- FIN DE PARTIDA -->
     <div id="modal-fin">
         <div class="nombres-caja" style="max-width:520px">
@@ -146,15 +176,28 @@
 
         // ═══ LOG ══════════════════════════════════════════════════════
         window.log = function (msg, tipo = 'info') {
-            const panel = document.getElementById('estado-log');
-            const div = document.createElement('div');
-            div.className = `log-entry log-${tipo}`;
             const now = new Date();
             const t = [now.getHours(), now.getMinutes(), now.getSeconds()]
                 .map(x => String(x).padStart(2, '0')).join(':');
-            div.innerHTML = `<span class="log-time">${t}</span>${msg}`;
+            const html = `<span class="log-time">${t}</span>${msg}`;
+
+            // Log principal (panel lateral desktop)
+            const panel = document.getElementById('estado-log');
+            const div = document.createElement('div');
+            div.className = `log-entry log-${tipo}`;
+            div.innerHTML = html;
             panel.appendChild(div);
             panel.scrollTop = panel.scrollHeight;
+
+            // Log duplicado en drawer (móvil)
+            const drawerLog = document.getElementById('drawer-log');
+            if (drawerLog) {
+                const div2 = document.createElement('div');
+                div2.className = `log-entry log-${tipo}`;
+                div2.innerHTML = html;
+                drawerLog.appendChild(div2);
+                drawerLog.scrollTop = drawerLog.scrollHeight;
+            }
         };
 
         // ═══ MARCADORES ══════════════════════════════════════════════
@@ -165,10 +208,23 @@
 
             const nombreJ1 = s.miNumero === 1 ? s.miNombre : s.rivalNombre;
             const nombreJ2 = s.miNumero === 1 ? s.rivalNombre : s.miNombre;
+
+            // Panel lateral (desktop)
             document.getElementById('score-nombre-j1').textContent = nombreJ1 || 'J1';
             document.getElementById('score-nombre-j2').textContent = nombreJ2 || 'J2';
             document.getElementById('score-pts-j1').textContent = s.puntos1;
             document.getElementById('score-pts-j2').textContent = s.puntos2;
+
+            // Drawer (móvil)
+            const dj = ['j1','j2'];
+            const dNombres = [nombreJ1, nombreJ2];
+            const dPts = [s.puntos1, s.puntos2];
+            dj.forEach((j, i) => {
+                const n = document.getElementById(`drawer-nombre-${j}`);
+                const p = document.getElementById(`drawer-pts-${j}`);
+                if (n) n.textContent = dNombres[i] || j.toUpperCase();
+                if (p) p.textContent = dPts[i];
+            });
 
             document.getElementById('pozo-count-mio').textContent = s.pozoMio;
             document.getElementById('pozo-count-rival').textContent = s.pozoRival;
@@ -367,6 +423,28 @@
         document.getElementById('input-nombre').addEventListener('keydown', e => {
             if (e.key === 'Enter') iniciarConexion(false);
         });
+        // ═══ DRAWER REGISTRO (móvil) ═══════════════════════════════
+        (function () {
+            const drawer  = document.getElementById('drawer-registro');
+            const btnAbrir = document.getElementById('btn-registro');
+            const overlay  = document.getElementById('drawer-overlay');
+            const btnCerrar = document.getElementById('drawer-close');
+
+            function abrirDrawer()  { drawer.classList.add('abierto'); }
+            function cerrarDrawer() { drawer.classList.remove('abierto'); }
+
+            btnAbrir  && btnAbrir.addEventListener('click', abrirDrawer);
+            overlay   && overlay.addEventListener('click', cerrarDrawer);
+            btnCerrar && btnCerrar.addEventListener('click', cerrarDrawer);
+
+            // Swipe hacia abajo cierra el drawer
+            let startY = 0;
+            drawer && drawer.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, { passive: true });
+            drawer && drawer.addEventListener('touchend',   e => {
+                if (e.changedTouches[0].clientY - startY > 60) cerrarDrawer();
+            }, { passive: true });
+        })();
+
     </script>
 </body>
 

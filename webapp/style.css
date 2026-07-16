@@ -283,6 +283,10 @@ body {
 .score-pts     { font-size:1.5rem; font-weight:300; color:var(--cream); }
 .score-escobas { font-size:.72rem; color:var(--text-dim); margin-top:2px; }
 
+/* ── BOTÓN FLOTANTE Y DRAWER — ocultos por defecto, solo móvil ── */
+#btn-registro  { display:none; }
+#drawer-registro { display:none; }
+
 /* ── TOP BAR RIGHT SIDE (badge + turn tag) ─────── */
 .top-bar-right { display:flex; align-items:center; gap:10px; }
 
@@ -345,4 +349,161 @@ body {
 .fin-linea-stats {
   margin-top:6px; padding-top:6px; border-top:1px solid var(--border);
   color:var(--text);
+}
+
+/* ═══════════════════════════════════════════════════════
+   MOBILE  (≤ 640px)
+   ═══════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+
+  /* Variables de carta más chicas */
+  :root {
+    --card-w: 78px;
+    --card-h: 122px;
+  }
+
+  /* Top bar compacta */
+  .top-bar { padding:6px 12px; }
+  .top-bar h1 { font-size:.85rem; letter-spacing:.08em; }
+  .turno-tag { font-size:.65rem; padding:3px 10px; }
+
+  /* El panel de registro se oculta del flujo normal */
+  .zona-estado { display:none; }
+
+  /* Botón flotante y drawer visibles en móvil */
+  #btn-registro { display:flex; }
+  #drawer-registro.abierto { display:flex; flex-direction:column; }
+
+  /* La zona de juego ocupa todo el ancho, sin gap innecesario */
+  .zona-juego { flex:1; padding:6px 10px; gap:6px; }
+
+  /* Rival: cartas en fila horizontal */
+  .zona-rival { gap:6px; min-height:0; }
+  .carta-rival {
+    width:calc(var(--card-w)*0.78);
+    height:calc(var(--card-h)*0.78);
+  }
+
+  /* Mesa + deck */
+  .zona-mesa-wrap { gap:8px; flex:1; min-height:0; }
+
+  /* Mesa con scroll horizontal Y vertical */
+  .mesa-cartas {
+    overflow-x:auto;
+    overflow-y:auto;
+    flex-wrap:wrap;
+    align-content:flex-start;
+    scrollbar-width:thin;
+  }
+
+  /* Deck más compacto */
+  .deck-widget { flex:0 0 52px; gap:3px; }
+  .deck-stack  { width:44px; height:64px; }
+  .deck-card   { width:40px; height:60px; }
+  .deck-count  { font-size:1rem; }
+  .deck-label  { font-size:.5rem; }
+
+  /* Las cartas de la mano van en fila con scroll horizontal */
+  .mano-cartas {
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    justify-content:flex-start;
+    padding-bottom:4px;
+    gap:8px;
+    scrollbar-width:none;
+  }
+  .mano-cartas::-webkit-scrollbar { display:none; }
+
+  /* Hover/seleccionada: menos travel en móvil */
+  .carta-mano:hover         { transform:translateY(-10px) scale(1.04); }
+  .carta-mano.seleccionada  { transform:translateY(-16px) scale(1.08) rotate(-1deg); }
+
+  /* Pozo proporcional */
+  .pozo-carta {
+    width:calc(var(--card-w)*0.6);
+    height:calc(var(--card-h)*0.6);
+  }
+  .pozo-count { font-size:.8rem; }
+  .fila-mano-y-pozo { gap:10px; }
+
+  /* Botón jugar: fijo al fondo */
+  .btn-jugar {
+    position:fixed; bottom:0; left:0; right:0;
+    border-radius:0; padding:14px;
+    font-size:.9rem; z-index:100;
+    box-shadow:0 -4px 20px rgba(0,0,0,.4);
+  }
+  .zona-mano { padding-bottom:54px; flex-shrink:0; }
+
+  /* Rival wrap sin altura mínima fija */
+  .rival-wrap { flex-shrink:0; }
+
+  /* ── BOTÓN FLOTANTE DEL REGISTRO ── */
+  #btn-registro {
+    position:fixed; bottom:60px; right:14px;
+    width:44px; height:44px; border-radius:50%;
+    background:var(--panel-bg);
+    border:1px solid var(--border);
+    color:var(--gold); font-size:1.1rem;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; z-index:101;
+    box-shadow:0 4px 14px rgba(0,0,0,.5);
+  }
+
+  /* Drawer del registro */
+  #drawer-registro {
+    position:fixed; inset:0; z-index:200;
+  }
+
+  /* Fondo oscuro que cierra el drawer al tocar */
+  .drawer-overlay {
+    position:absolute; inset:0;
+    background:rgba(0,0,0,.6); backdrop-filter:blur(2px);
+  }
+
+  /* Panel deslizante desde abajo */
+  .drawer-panel {
+    position:absolute; bottom:0; left:0; right:0;
+    height:70vh;
+    background:var(--panel-bg);
+    border-top:1px solid var(--border);
+    border-radius:16px 16px 0 0;
+    display:flex; flex-direction:column;
+    transform:translateY(100%);
+    transition:transform .3s cubic-bezier(.4,0,.2,1);
+  }
+  #drawer-registro.abierto .drawer-panel {
+    transform:translateY(0);
+  }
+
+  .drawer-handle {
+    width:36px; height:4px; border-radius:2px;
+    background:rgba(255,255,255,.2);
+    margin:10px auto 0;
+    flex-shrink:0;
+  }
+
+  .drawer-header {
+    padding:10px 20px 12px;
+    font-family:'Cinzel',serif; font-size:.78rem;
+    letter-spacing:.18em; color:var(--gold);
+    border-bottom:1px solid var(--border);
+    flex-shrink:0;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+
+  .drawer-scores {
+    display:flex; gap:10px;
+    padding:12px 16px;
+    border-bottom:1px solid var(--border);
+    flex-shrink:0;
+  }
+  .drawer-scores .score-jugador { flex:1; }
+
+  .drawer-log {
+    flex:1; overflow-y:auto; min-height:0;
+    padding:10px 14px;
+    display:flex; flex-direction:column; gap:7px;
+    scrollbar-width:thin; scrollbar-color:rgba(201,168,76,.3) transparent;
+  }
 }
